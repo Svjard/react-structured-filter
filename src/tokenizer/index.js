@@ -404,9 +404,13 @@ export default class Tokenizer extends Component {
     return this.state.selected.map( item => {
       const option = this.props.options.find(t => t.field === item.field);
       const options = option.options ? option.options() : null;
-      const _value = options && typeof options[0] !== 'string' ?
+      let _value = options && typeof options[0] !== 'string' ?
         options.find(d => d.label === item.value).value :
         item.value;
+      if (option.type === 'boolean') {
+        _value = _value === 'Yes';
+      }
+
       return {
         field: option.id || option.field,
         operator: item.operator,
