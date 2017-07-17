@@ -201,7 +201,6 @@ export default class Tokenizer extends Component {
   }
 
   componentWillReceiveProps( nextProps ) {
-    console.log('change in selected', this.props.value, nextProps.value);
     const update = {};
     if ( nextProps.value !== this.props.value ) {
       update.selected = this.getStateFromProps( nextProps );
@@ -218,7 +217,6 @@ export default class Tokenizer extends Component {
     const tokenClasses = {};
     tokenClasses[ this.props.customClasses.token ] = !!this.props.customClasses.token;
     const classList = classNames( tokenClasses );
-    console.log('render tokens', this.state.selected);
     const result = this.state.selected.map( selected => {
       const mykey = selected.field + selected.operator + selected.value;
 
@@ -302,7 +300,6 @@ export default class Tokenizer extends Component {
           return () => ['Yes', 'No'];
         }
 
-        console.log('check options', this.props.options[ i ].options);
         if (this.props.options[ i ].options) {
           const options = this.props.options[ i ].options();
           if (options.length > 0 && options[0].label) {
