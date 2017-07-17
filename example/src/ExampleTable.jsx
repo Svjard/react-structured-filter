@@ -12,12 +12,12 @@ var ExampleTable = React.createClass({
     return {
       filter: [
             {
-              category: 'Industry',
+              field: 'Industry',
               operator: '==',
               value: 'Music',
             },
             {
-              category: 'IPO',
+              field: 'IPO',
               operator: '>',
               value: 'Dec 8, 1980 10:50 PM',
             },
@@ -42,6 +42,8 @@ var ExampleTable = React.createClass({
 
 
   updateFilter: function(filter){
+    console.log('filter', arguments);
+
     // Set our filter to json data of the current filter tokens
     this.setState({filter: filter});
   },
@@ -64,15 +66,18 @@ var ExampleTable = React.createClass({
     return (
       <div>
         <StructuredFilter
+          ref="myfilter"
           placeholder="Filter data..."
+          headers={["Field", "Operator", "Value"]}
           options={[
-            {category:"Symbol", type:"textoptions", options:this.getSymbolOptions},
-            {category:"Name",type:"text"},
-            {category:"Price",type:"number"},
-            {category:"MarketCap",type:"number"},
-            {category:"IPO", type:"date"},
-            {category:"Sector", type:"textoptions", options:this.getSectorOptions},
-            {category:"Industry", type:"textoptions", options:this.getIndustryOptions}
+            {field:"Symbol", type:"textoptions", options:() => ([{value:'AAPL',label:'Apple'}])},
+            {field:"Name",type:"text"},
+            {field:"Price",type:"number"},
+            {field:"MarketCap",type:"number"},
+            {field:"IPO", type:"date"},
+            {field:"On", type:"boolean"},
+            {field:"Sector", type:"textoptions", options:this.getSectorOptions},
+            {field:"Industry", type:"textoptions", options:this.getIndustryOptions}
             ]}
           customClasses={{
             input: "filter-tokenizer-text-input",

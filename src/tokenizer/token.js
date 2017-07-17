@@ -34,10 +34,10 @@ export default class Token extends Component {
   }
 
   render() {
-    const { category, operator, value } = this.props.children;
+    const { field, operator, value } = this.props.children;
     return (
       <div className="typeahead-token">
-        <span className="token-category">{ category }</span>
+        <span className="token-field">{ field }</span>
         <span className="token-operator">{ operator }</span>
         <span className="token-value">{ value }</span>
         { this._makeCloseButton() }

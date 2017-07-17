@@ -30,9 +30,10 @@ export default class Tokenizer extends Component {
 
   static propTypes = {
     /**
-     * An array of structures with the components `category` and `type`
+     * An array of structures with the components `id`, `label`, and `type`
      *
-     * * _category_: Name of the first thing the user types.
+     * * _id_: The ID of the field that gets associated when creating the query.
+     * * _label_: Name of the first thing the user types.
      * * _type_: This can be one of the following:
      *   * _text_: Arbitrary text for the value. No autocomplete options.
      *     Operator choices will be: `==`, `!=`, `contains`, `!contains`.
@@ -42,6 +43,8 @@ export default class Tokenizer extends Component {
      *     "GOOG"]}`). Operator choices will be: `==`, `!=`.
      *   * _number_: Arbitrary text for the value. No autocomplete options.
      *     Operator choices will be: `==`, `!=`, `<`, `<=`, `>`, `>=`.
+     *   * _boolean_: Boolean value. Autocompletes to Yes and No.
+     *     Operator choices will be: `==`, `!=`.
      *   * _date_: Shows a calendar and the input must be of the form
      *     `MMM D, YYYY H:mm A`. Operator choices will be: `==`, `!=`, `<`, `<=`, `>`,
      *     `>=`.
@@ -50,29 +53,44 @@ export default class Tokenizer extends Component {
      *
      *     [
      *       {
-     *         "category": "Symbol",
+     *         "label": "Symbol",
      *         "type": "textoptions",
      *         "options": function() {return ["MSFT", "AAPL", "GOOG"]}
      *       },
      *       {
-     *         "category": "Name",
+     *         "id": "CSymb",
+     *         "label": "Custom Symbol",
+     *         "type": "textoptions",
+     *         "options": function() {return [
+     *          {label:"Microsoft", value:"MSFT"},
+     *          {label:"Apple", value:"APPL"}
+     *         ]}
+     *       },
+     *       {
+     *         "label": "Name",
      *         "type": "text"
      *       },
      *       {
-     *         "category": "Price",
+     *         "label": "Price",
      *         "type": "number"
      *       },
      *       {
-     *         "category": "MarketCap",
+     *         "label": "MarketCap",
      *         "type": "number"
      *       },
      *       {
-     *         "category": "IPO",
+     *         "label": "IPO",
      *         "type": "date"
      *       }
      *     ]
      */
     options: PropTypes.array,
+
+    /**
+     * The labels to provide in the dropdown headers for the fields list.
+     * Defaults to ['Category', 'Operator', 'Value'].
+     */
+    headers: PropTypes.array,
 
     /**
      * An object containing custom class names for child elements. Useful for
@@ -92,23 +110,23 @@ export default class Tokenizer extends Component {
     /**
      * **Uncontrolled Component:** A default set of values of tokens to be
      * loaded on first render. Each token should be an object with a
-     * `category`, `operator`, and `value` key.
+     * `label`, `operator`, and `value` key.
      *
      * Example:
      *
      *     [
      *       {
-     *         category: 'Industry',
+     *         label: 'Industry',
      *         operator: '==',
      *         value: 'Books',
      *       },
      *       {
-     *         category: 'IPO',
+     *         label: 'IPO',
      *         operator: '>',
      *         value: 'Dec 8, 1980 10:50 PM',
      *       },
      *       {
-     *         category: 'Name',
+     *         label: 'Name',
      *         operator: 'contains',
      *         value: 'Nabokov',
      *       },
@@ -118,24 +136,24 @@ export default class Tokenizer extends Component {
 
     /**
      * **Controlled Component:** A set of values of tokens to be loaded on
-     * each render. Each token should be an object with a `category`,
+     * each render. Each token should be an object with a `label`,
      * `operator`, and `value` key.
      *
      * Example:
      *
      *     [
      *       {
-     *         category: 'Industry',
+     *         label: 'Industry',
      *         operator: '==',
      *         value: 'Books',
      *       },
      *       {
-     *         category: 'IPO',
+     *         label: 'IPO',
      *         operator: '>',
      *         value: 'Dec 8, 1980 10:50 PM',
      *       },
      *       {
-     *         category: 'Name',
+     *         label: 'Name',
      *         operator: 'contains',
      *         value: 'Nabokov',
      *       },
@@ -174,15 +192,16 @@ export default class Tokenizer extends Component {
 
   state = {
     selected: this.getStateFromProps( this.props ),
-    category: '',
+    field: '',
     operator: '',
   }
 
   componentDidMount() {
-    this.props.onChange( this.state.selected );
+    this.props.onChange( this.state.selected, this._getSelectedAsQuery() );
   }
 
   componentWillReceiveProps( nextProps ) {
+    console.log('change in selected', this.props.value, nextProps.value);
     const update = {};
     if ( nextProps.value !== this.props.value ) {
       update.selected = this.getStateFromProps( nextProps );
@@ -199,8 +218,9 @@ export default class Tokenizer extends Component {
     const tokenClasses = {};
     tokenClasses[ this.props.customClasses.token ] = !!this.props.customClasses.token;
     const classList = classNames( tokenClasses );
+    console.log('render tokens', this.state.selected);
     const result = this.state.selected.map( selected => {
-      const mykey = selected.category + selected.operator + selected.value;
+      const mykey = selected.field + selected.operator + selected.value;
 
       return (
         <Token
@@ -217,63 +237,76 @@ export default class Tokenizer extends Component {
   }
 
   _getOptionsForTypeahead() {
-    let categoryType;
+    let fieldType;
 
-    if ( this.state.category === '' ) {
-      const categories = [];
+    if ( this.state.field === '' ) {
+      const fields = [];
       for ( let i = 0; i < this.props.options.length; i++ ) {
-        categories.push( this.props.options[ i ].category );
+        const item = this.props.options[ i ];
+        fields.push( item.field );
       }
-      return categories;
-    } else if ( this.state.operator === '' ) {
-      categoryType = this._getCategoryType();
 
-      if ( categoryType === 'text' ) {
+      return fields;
+    } else if ( this.state.operator === '' ) {
+      fieldType = this._getFieldType();
+
+      if ( fieldType === 'text' ) {
         return [ '==', '!=', 'contains', '!contains' ];
-      } else if ( categoryType === 'textoptions' ) {
+      } else if ( fieldType === 'textoptions' || fieldType === 'boolean' ) {
         return [ '==', '!=' ];
-      } else if ( categoryType === 'number' || categoryType === 'date' ) {
+      } else if ( fieldType === 'number' || fieldType === 'date' ) {
         return [ '==', '!=', '<', '<=', '>', '>=' ];
       }
 
       /* eslint-disable no-console */
-      console.warn( `WARNING: Unknown category type in tokenizer: "${categoryType}"` );
+      console.warn( `WARNING: Unknown category type in tokenizer: "${fieldType}"` );
       /* eslint-enable no-console */
 
       return [];
     }
-    const options = this._getCategoryOptions();
+
+    const options = this._getFieldOptions();
     if ( options === null || options === undefined ) return [];
     return options();
   }
 
   _getHeader() {
-    if ( this.state.category === '' ) {
-      return 'Category';
+    if ( this.state.field === '' ) {
+      return this.props.headers ? this.props.headers[0] : 'Category';
     } else if ( this.state.operator === '' ) {
-      return 'Operator';
+      return this.props.headers ? this.props.headers[1] : 'Operator';
     }
 
-    return 'Value';
+    return this.props.headers ? this.props.headers[2] : 'Value';
   }
 
-  _getCategoryType( category ) {
-    let categoryType;
-    let cat = category;
-    if ( !category || category === '' ) {
-      cat = this.state.category;
+  _getFieldType( field ) {
+    let fieldType;
+    let f = field;
+    if ( !field || field === '' ) {
+      f = this.state.field;
     }
+
     for ( let i = 0; i < this.props.options.length; i++ ) {
-      if ( this.props.options[ i ].category === cat ) {
-        categoryType = this.props.options[ i ].type;
-        return categoryType;
+      if ( this.props.options[ i ].field === f ) {
+        fieldType = this.props.options[ i ].type;
+        return fieldType;
       }
     }
   }
 
-  _getCategoryOptions() {
+  _getFieldOptions() {
     for ( let i = 0; i < this.props.options.length; i++ ) {
-      if ( this.props.options[ i ].category === this.state.category ) {
+      if ( this.props.options[ i ].field === this.state.field ) {
+        if ( this.props.options[ i ].type === 'boolean' ) {
+          return () => ['Yes', 'No'];
+        }
+
+        const options = this.props.options[ i ].options();
+        if (options.length > 0 && options[0].label) {
+          return () => options.map(obj => obj.label);
+        }
+
         return this.props.options[ i ].options;
       }
     }
@@ -293,8 +326,8 @@ export default class Tokenizer extends Component {
         entry.selectionStart === 0 ) {
       if ( this.state.operator !== '' ) {
         this.setState({ operator: '' });
-      } else if ( this.state.category !== '' ) {
-        this.setState({ category: '' });
+      } else if ( this.state.field !== '' ) {
+        this.setState({ field: '' });
       } else {
         // No tokens
         if ( !this.state.selected.length ) {
@@ -323,14 +356,16 @@ export default class Tokenizer extends Component {
 
     this.state.selected.splice( index, 1 );
     this.setState({ selected: this.state.selected });
-    this.props.onChange( this.state.selected );
+    this.props.onChange( this.state.selected, this._getSelectedAsQuery() );
 
     return;
   }
 
   _addTokenForValue( value ) {
-    if ( this.state.category === '' ) {
-      this.setState({ category: value });
+    console.log('_addTokenForValue', value);
+
+    if ( this.state.field === '' ) {
+      this.setState({ field: value });
       this.refs.typeahead.refs.inner.setEntryText( '' );
       return;
     }
@@ -342,18 +377,20 @@ export default class Tokenizer extends Component {
     }
 
     const newValue = {
-      category: this.state.category,
+      field: this.state.field,
       operator: this.state.operator,
       value,
     };
 
     this.state.selected.push( newValue );
+    console.log('_addTokenForValue selected', this.state.selected);
     this.setState({ selected: this.state.selected });
     this.refs.typeahead.refs.inner.setEntryText( '' );
-    this.props.onChange( this.state.selected );
+
+    this.props.onChange( this.state.selected, this._getSelectedAsQuery() );
 
     this.setState({
-      category: '',
+      field: '',
       operator: '',
     });
 
@@ -361,11 +398,29 @@ export default class Tokenizer extends Component {
   }
 
   /*
+   * Formats the selected value into a queryable object.
+   */
+  _getSelectedAsQuery() {
+    return this.state.selected.map( item => {
+      const option = this.props.options.find(t => t.field === item.field);
+      const options = option.options ? option.options() : null;
+      const _value = options && typeof options[0] !== 'string' ?
+        options.find(d => d.label === item.value).value :
+        item.value;
+      return {
+        field: option.id || option.field,
+        operator: item.operator,
+        value: _value,
+      };
+    });
+  }
+
+  /*
    * Returns the data type the input should use ("date" or "text")
    */
   _getInputType() {
-    if ( this.state.category !== '' && this.state.operator !== '' ) {
-      return this._getCategoryType();
+    if ( this.state.field !== '' && this.state.operator !== '' ) {
+      return this._getFieldType();
     }
 
     return 'text';
@@ -381,7 +436,7 @@ export default class Tokenizer extends Component {
           { this._renderTokens() }
 
           <div className="filter-input-group">
-            <div className="filter-category">{ this.state.category } </div>
+            <div className="filter-field">{ this.state.field } </div>
             <div className="filter-operator">{ this.state.operator } </div>
 
             <Typeahead ref="typeahead"
