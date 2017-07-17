@@ -76,7 +76,7 @@
   padding:5px;
 }
 
-.filter-input-group .filter-category,
+.filter-input-group .filter-field,
 .filter-input-group .filter-operator,
 .filter-input-group .filter-value {
   overflow:auto;
