@@ -302,12 +302,15 @@ export default class Tokenizer extends Component {
           return () => ['Yes', 'No'];
         }
 
-        const options = this.props.options[ i ].options();
-        if (options.length > 0 && options[0].label) {
-          return () => options.map(obj => obj.label);
-        }
+        console.log('check options', this.props.options[ i ].options);
+        if (this.props.options[ i ].options) {
+          const options = this.props.options[ i ].options();
+          if (options.length > 0 && options[0].label) {
+            return () => options.map(obj => obj.label);
+          }
 
-        return this.props.options[ i ].options;
+          return this.props.options[ i ].options;
+        }
       }
     }
   }
