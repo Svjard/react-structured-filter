@@ -201,7 +201,7 @@ export default class Tokenizer extends Component {
   }
 
   componentWillReceiveProps( nextProps ) {
-    const update = {};
+    const update = { };
     if ( nextProps.value !== this.props.value ) {
       update.selected = this.getStateFromProps( nextProps );
     }
@@ -209,7 +209,7 @@ export default class Tokenizer extends Component {
   }
 
   getStateFromProps( props ) {
-    const value = props.value || props.defaultValue || [];
+    const value = props.value || props.defaultValue || [ ];
     return value.slice( 0 );
   }
 
@@ -270,12 +270,12 @@ export default class Tokenizer extends Component {
 
   _getHeader() {
     if ( this.state.field === '' ) {
-      return this.props.headers ? this.props.headers[0] : 'Category';
+      return this.props.headers ? this.props.headers[ 0 ] : 'Category';
     } else if ( this.state.operator === '' ) {
-      return this.props.headers ? this.props.headers[1] : 'Operator';
+      return this.props.headers ? this.props.headers[ 1 ] : 'Operator';
     }
 
-    return this.props.headers ? this.props.headers[2] : 'Value';
+    return this.props.headers ? this.props.headers[ 2 ] : 'Value';
   }
 
   _getFieldType( field ) {
@@ -297,13 +297,13 @@ export default class Tokenizer extends Component {
     for ( let i = 0; i < this.props.options.length; i++ ) {
       if ( this.props.options[ i ].field === this.state.field ) {
         if ( this.props.options[ i ].type === 'boolean' ) {
-          return () => ['Yes', 'No'];
+          return () => [ 'Yes', 'No' ];
         }
 
-        if (this.props.options[ i ].options) {
+        if ( this.props.options[ i ].options ) {
           const options = this.props.options[ i ].options();
-          if (options.length > 0 && options[0].label) {
-            return () => options.map(obj => obj.label);
+          if ( options.length > 0 && options[ 0 ].label ) {
+            return () => options.map( obj => obj.label );
           }
 
           return this.props.options[ i ].options;
@@ -362,8 +362,6 @@ export default class Tokenizer extends Component {
   }
 
   _addTokenForValue( value ) {
-    console.log('_addTokenForValue', value);
-
     if ( this.state.field === '' ) {
       this.setState({ field: value });
       this.refs.typeahead.refs.inner.setEntryText( '' );
@@ -383,7 +381,6 @@ export default class Tokenizer extends Component {
     };
 
     this.state.selected.push( newValue );
-    console.log('_addTokenForValue selected', this.state.selected);
     this.setState({ selected: this.state.selected });
     this.refs.typeahead.refs.inner.setEntryText( '' );
 
@@ -402,12 +399,12 @@ export default class Tokenizer extends Component {
    */
   _getSelectedAsQuery() {
     return this.state.selected.map( item => {
-      const option = this.props.options.find(t => t.field === item.field);
+      const option = this.props.options.find( t => t.field === item.field );
       const options = option.options ? option.options() : null;
-      let _value = options && typeof options[0] !== 'string' ?
-        options.find(d => d.label === item.value).value :
+      let _value = options && typeof options[ 0 ] !== 'string' ?
+        options.find( d => d.label === item.value ).value :
         item.value;
-      if (option.type === 'boolean') {
+      if ( option.type === 'boolean' ) {
         _value = _value === 'Yes';
       }
 
