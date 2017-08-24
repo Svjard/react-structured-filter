@@ -249,11 +249,11 @@ export default class Tokenizer extends Component {
       fieldType = this._getFieldType();
 
       if ( fieldType === 'text' ) {
-        return [ '==', '!=', 'contains', '!contains' ];
+        return [ 'equals', 'not equals', 'contains', 'not contains' ];
       } else if ( fieldType === 'textoptions' || fieldType === 'boolean' ) {
-        return [ '==', '!=' ];
+        return [ 'equals', 'not equals' ];
       } else if ( fieldType === 'number' || fieldType === 'date' ) {
-        return [ '==', '!=', '<', '<=', '>', '>=' ];
+        return [ 'equals', 'not equals', '<', '<=', '>', '>=' ];
       }
 
       /* eslint-disable no-console */
